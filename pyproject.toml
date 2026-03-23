@@ -156,10 +156,10 @@ omit = ["tests/*", "notebooks/*", "frontend/*"]
 # Hatch environments (optional but useful for isolated runs)
 # ---------------------------------------------------------------------------
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/deal_intelligence_rag"]
 
 [tool.hatch.build.targets.editable]
-packages = ["src"]
+packages = ["src/deal_intelligence_rag"]
 
 [tool.hatch.envs.default]
 features = ["dev"]
