@@ -1,0 +1,174 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deal-intelligence-rag"
+version = "0.1.0"
+description = "LLM-powered M&A deal intelligence platform with multi-hop RAG, agentic pipelines, and RAGAS evaluation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+dependencies = [
+    # --- LLM & embeddings ---
+    "openai>=1.30.0",               # GPT-4o for generation + text-embedding-3-small
+    "cohere>=5.5.0",                # alternative embedder (embed-english-v3)
+    "tiktoken>=0.7.0",              # token counting for chunking budget
+
+    # --- Vector store & retrieval ---
+    "chromadb>=0.5.0",              # local vector store, no server needed
+    "rank-bm25>=0.2.2",             # sparse BM25 retrieval
+    "sentence-transformers>=3.0.0", # cross-encoder re-ranker (CPU-friendly)
+
+    # --- Orchestration & agents ---
+    "langgraph>=0.1.0",             # agent loop & tool routing
+    "langchain-core>=0.2.0",        # base abstractions (avoid full langchain)
+    "langchain-openai>=0.1.0",      # OpenAI integration shim
+
+    # --- Document parsing ---
+    "pypdf>=4.2.0",                 # PDF text extraction
+    "pdfplumber>=0.11.0",           # table-aware PDF parsing
+    "python-docx>=1.1.0",           # Word document support
+    "beautifulsoup4>=4.12.0",       # HTML filing parser
+    "lxml>=5.2.0",                  # fast XML/HTML backend for bs4
+    "httpx>=0.27.0",                # async HTTP for EDGAR downloader
+
+    # --- Structured output & validation ---
+    "pydantic>=2.7.0",              # response schemas + validation
+    "pydantic-settings>=2.3.0",     # settings from .env
+
+    # --- API layer ---
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-multipart>=0.0.9",      # file upload support
+
+    # --- Frontend ---
+    "streamlit>=1.35.0",
+
+    # --- Evaluation ---
+    "ragas>=0.1.9",                 # faithfulness, relevancy, context metrics
+    "datasets>=2.19.0",             # HuggingFace datasets for eval harness
+
+    # --- Observability & logging ---
+    "structlog>=24.2.0",            # structured JSON logging
+    "rich>=13.7.0",                 # pretty terminal output
+
+    # --- Utilities ---
+    "tenacity>=8.3.0",              # retry logic for API calls
+    "python-dotenv>=1.0.0",         # .env loading
+    "tqdm>=4.66.0",                 # progress bars
+    "pandas>=2.2.0",                # results analysis
+    "matplotlib>=3.9.0",            # eval charts
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "httpx>=0.27.0",                # TestClient for FastAPI
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
+    "ipykernel>=6.29.0",            # Jupyter kernel for notebooks
+    "ipywidgets>=8.1.0",
+]
+
+notebooks = [
+    "jupyterlab>=4.2.0",
+    "plotly>=5.22.0",
+    "seaborn>=0.13.0",
+]
+
+[project.scripts]
+ingest   = "src.ingestion.edgar_downloader:main"
+evaluate = "eval.run_ragas:main"
+
+# ---------------------------------------------------------------------------
+# Ruff — linter + formatter (replaces flake8, isort, black)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "eval", "frontend", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501",  # line length handled by formatter
+    "B008",  # do not perform function call in default args (FastAPI Depends)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src", "eval"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ---------------------------------------------------------------------------
+# Mypy — static type checking
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+exclude = ["notebooks/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "rank_bm25.*",
+    "ragas.*",
+    "streamlit.*",
+    "pdfplumber.*",
+]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=60"
+log_cli = true
+log_cli_level = "INFO"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "notebooks/*", "frontend/*"]
+
+# ---------------------------------------------------------------------------
+# Hatch environments (optional but useful for isolated runs)
+# ---------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+packages = ["src/deal_intelligence_rag"]
+
+[tool.hatch.build.targets.editable]
+packages = ["src/deal_intelligence_rag"]
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.hatch.envs.default.scripts]
+test     = "pytest {args}"
+lint     = "ruff check src eval tests"
+fmt      = "ruff format src eval tests"
+typecheck = "mypy src"
+evaluate = "python eval/run_ragas.py"
+serve    = "uvicorn src.api.main:app --reload --port 8000"
+ui       = "streamlit run frontend/app.py"

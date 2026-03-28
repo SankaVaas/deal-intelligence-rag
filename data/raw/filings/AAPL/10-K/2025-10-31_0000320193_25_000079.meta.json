@@ -1,0 +1,10 @@
+{
+  "ticker": "AAPL",
+  "cik": "0000320193",
+  "company_name": "Apple Inc.",
+  "form_type": "10-K",
+  "filed_date": "2025-10-31",
+  "accession_number": "0000320193-25-000079",
+  "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/0000320193-25-000079.txt",
+  "local_path": "data\\raw\\filings\\AAPL\\10-K\\2025-10-31_0000320193_25_000079.txt"
+}

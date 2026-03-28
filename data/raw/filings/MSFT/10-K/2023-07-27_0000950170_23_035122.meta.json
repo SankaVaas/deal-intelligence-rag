@@ -1,0 +1,10 @@
+{
+  "ticker": "MSFT",
+  "cik": "0000789019",
+  "company_name": "MICROSOFT CORP",
+  "form_type": "10-K",
+  "filed_date": "2023-07-27",
+  "accession_number": "0000950170-23-035122",
+  "filing_url": "https://www.sec.gov/Archives/edgar/data/789019/000095017023035122/0000950170-23-035122.txt",
+  "local_path": "data\\raw\\filings\\MSFT\\10-K\\2023-07-27_0000950170_23_035122.txt"
+}
