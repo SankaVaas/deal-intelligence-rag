@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Deal Intelligence — SEC Filing Analysis | Bank-Grade RAG</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+/* ── RESET & DARK BANK THEME ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* dark, financial-grade palette */
+  --bg-deep:      #0a0c12;
+  --bg-surface:   #11141c;
+  --bg-elevated:  #161c28;
+  --bg-sidebar:   #0e1118;
+  --card-bg:      #121724;
+  --border-subtle:#1f293d;
+  --border-medium:#2a3448;
+  --text-primary: #edf2f7;
+  --text-secondary:#9aa8bf;
+  --text-muted:   #5f6f8a;
+  --accent-blue:  #2b6ef0;
+  --accent-blue-dark:#1a56d6;
+  --accent-gold:  #d4a13e;
+  --accent-gold-light: #f5e2b0;
+  --success:      #10b981;
+  --warning:      #f59e0b;
+  --danger:       #f9735c;
+  --info:         #3b82f6;
+  --shadow-sm:    0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md:    0 8px 24px rgba(0, 0, 0, 0.4);
+  --radius:       6px;
+  --radius-lg:    10px;
+  --ff-body:      'Inter', system-ui, -apple-system, sans-serif;
+  --ff-mono:      'JetBrains Mono', monospace;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ff-body);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 2.5rem;
+  max-width: 880px;
+}
+
+/* ── Sidebar styling (dark, clean) ───────────────────────────────── */
+.sidebar-brand {
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand-mark {
+  font-family: var(--ff-body);
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.brand-mark span {
+  color: var(--accent-blue);
+}
+
+.brand-sub {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.sidebar-section {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebar-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.status-dot.online  { background: var(--success); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+.status-dot.offline { background: var(--danger); box-shadow: 0 0 6px rgba(249,115,92,0.4); }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Form elements (dark input) */
+.field { margin-bottom: 1rem; }
+.field label {
+  display: block;
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.field input, .field select {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border 0.15s, box-shadow 0.15s;
+}
+
+.field input:focus, .field select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(43,110,240,0.2);
+}
+
+.field input::placeholder { color: var(--text-muted); }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--ff-body);
+  margin-top: 8px;
+}
+
+.toggle {
+  position: relative;
+  width: 34px; height: 18px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border-medium);
+  border-radius: 18px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  left: 3px; top: 3px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--accent-blue); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+/* Index stats */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+.stat-value {
+  font-family: var(--ff-body);
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: white;
+  line-height: 1;
+}
+.stat-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ticker-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ticker-badge {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  background: rgba(43,110,240,0.12);
+  color: var(--accent-blue);
+  border-radius: var(--radius);
+  border: 1px solid rgba(43,110,240,0.2);
+  font-weight: 500;
+}
+.year-badge {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  background: rgba(16,185,129,0.1);
+  color: var(--success);
+  border-radius: var(--radius);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+
+/* pipeline legend */
+.pipeline-legend {
+  padding: 1.25rem 1.5rem;
+  margin-top: auto;
+  border-top: 1px solid var(--border-subtle);
+}
+.pipeline-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.pipeline-step::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* ── Main area (dark cards) ────────────────────────────────────────── */
+.page-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.page-title {
+  font-family: var(--ff-body);
+  font-weight: 700;
+  font-size: 1.9rem;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  font-weight: 400;
+}
+
+/* Query input area */
+.query-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.query-textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 1.25rem 1.5rem;
+  font-family: var(--ff-body);
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  resize: none;
+  line-height: 1.6;
+  min-height: 90px;
+}
+
+.query-textarea::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.query-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-subtle);
+  gap: 12px;
+}
+
+.char-count {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.btn-analyse {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 22px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-analyse:hover { background: var(--accent-blue-dark); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(43,110,240,0.3);}
+.btn-analyse:active { transform: translateY(0); }
+.btn-analyse:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.btn-analyse .spinner {
+  width: 12px; height: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Example chips */
+.examples-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+.example-chip {
+  font-family: var(--ff-body);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 40px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.example-chip:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: rgba(43,110,240,0.1);
+}
+
+/* ── Answer card & confidence (dark ready) ─────────────────────────── */
+.answer-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.answer-header {
+  padding: 0.9rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.confidence-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 5px 12px;
+  border-radius: 60px;
+  font-weight: 600;
+}
+.confidence-pill.high   { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.confidence-pill.medium { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.confidence-pill.low    { background: rgba(249,115,92,0.12); color: #fba48f; border: 1px solid rgba(249,115,92,0.25); }
+.confidence-pill.refused{ background: rgba(100,116,139,0.2); color: #94a3b8; border: 1px solid var(--border-medium); }
+
+.confidence-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.high .confidence-dot   { background: #34d399; }
+.medium .confidence-dot { background: #fbbf24; }
+.low .confidence-dot    { background: #fba48f; }
+.refused .confidence-dot{ background: #94a3b8; }
+
+.answer-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.answer-meta {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.judge-flag {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--warning);
+  background: rgba(245,158,11,0.15);
+  padding: 3px 10px;
+  border-radius: 40px;
+  border: 1px solid rgba(245,158,11,0.25);
+}
+
+.answer-body {
+  padding: 1.5rem 1.5rem;
+}
+
+.answer-text {
+  font-family: var(--ff-body);
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+.refused-text {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.judge-feedback-box {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(245,158,11,0.08);
+  border-left: 3px solid var(--warning);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Sub-queries */
+.sub-queries-row {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--bg-elevated);
+}
+.sq-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.sq-chip {
+  font-family: var(--ff-body);
+  font-size: 12px;
+  color: #7aaef5;
+  background: rgba(43,110,240,0.12);
+  border: 1px solid rgba(43,110,240,0.2);
+  border-radius: 40px;
+  padding: 3px 12px;
+}
+
+/* Evidence section */
+.evidence-section { margin-bottom: 1.8rem; }
+
+.section-heading {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.evidence-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.evidence-card:hover { box-shadow: var(--shadow-sm); border-color: var(--border-medium); }
+
+.evidence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.2rem;
+  cursor: pointer;
+  gap: 10px;
+}
+
+.evidence-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex:1;
+}
+
+.evidence-rank {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.evidence-ribbon {
+  width: 3px;
+  height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.evidence-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.evidence-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.relevance-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.relevance-bar {
+  width: 52px; height: 4px;
+  background: var(--border-medium);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.relevance-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.relevance-pct {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+.chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.chevron.open { transform: rotate(180deg); }
+
+.evidence-body {
+  padding: 0 1.2rem 1rem 2.4rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.evidence-citation {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--accent-blue);
+  letter-spacing: 0.03em;
+  margin: 8px 0 6px;
+}
+.evidence-text {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* meta card */
+.meta-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.meta-key {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.meta-val {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+.empty-glyph {
+  font-family: var(--ff-body);
+  font-size: 2.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+.empty-title {
+  font-weight: 500;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.empty-sub {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+/* Error state */
+.error-box {
+  background: rgba(249,115,92,0.1);
+  border: 1px solid rgba(249,115,92,0.3);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: #fba48f;
+  margin-bottom: 1rem;
+}
+
+/* Skeleton loading (dark) */
+.skeleton-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.skeleton-line {
+  height: 12px;
+  background: linear-gradient(90deg, #1f2a3e 25%, #2a3548 50%, #1f2a3e 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.skeleton-line.w-full  { width: 100%; }
+.skeleton-line.w-3-4   { width: 75%; }
+.skeleton-line.w-1-2   { width: 50%; }
+.skeleton-line.w-1-4   { width: 25%; }
+.skeleton-line.h-sm    { height: 10px; }
+.skeleton-line.h-lg    { height: 20px; }
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 6px; }
+
+/* responsive */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 1.2rem; }
+}
+</style>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const API = 'http://localhost:8000/api/v1';
+
+const EXAMPLES = [
+  "What were Apple's iPhone revenue figures in fiscal 2024?",
+  "Compare Microsoft and Apple gross margins in 2024",
+  "Azure cloud revenue growth percentage year over year",
+  "Apple supply chain risks related to China and manufacturing",
+  "What material adverse change clauses does Microsoft disclose?",
+];
+
+const TOOLS = [
+  { value: 'search_filings',  label: '◈ General Search' },
+  { value: 'compare_metric',  label: '⟷ Compare Metric' },
+  { value: 'extract_clause',  label: '§ Extract Clause' },
+  { value: 'summarise_risks', label: '⚠ Risk Summary' },
+];
+
+// ── Utilities ────────────────────────────────────────────────
+function confidenceConfig(level) {
+  return {
+    high:    { label: 'HIGH CONFIDENCE',   cls: 'high',    fill: '#10b981' },
+    medium:  { label: 'MEDIUM CONFIDENCE', cls: 'medium',  fill: '#f59e0b' },
+    low:     { label: 'LOW CONFIDENCE',    cls: 'low',     fill: '#f9735c' },
+    refused: { label: 'REFUSED',           cls: 'refused', fill: '#64748b' },
+  }[level?.toLowerCase()] || { label: level, cls: 'low', fill: '#f9735c' };
+}
+
+function ribbonColor(score) {
+  if (score >= 0.7) return '#10b981';
+  if (score >= 0.35) return '#d4a13e';
+  return '#f9735c';
+}
+
+// ── Components ───────────────────────────────────────────────
+
+function StatusDot({ online }) {
+  return <span className={`status-dot ${online ? 'online' : 'offline'}`} />;
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <label className="toggle">
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+      <span className="toggle-slider" />
+    </label>
+  );
+}
+
+function SkeletonLoading() {
+  return (
+    <>
+      <div className="skeleton-card">
+        <div className="skeleton-line h-lg w-1-4" style={{marginBottom: 16}} />
+        <div className="skeleton-line w-full" />
+        <div className="skeleton-line w-3-4" />
+        <div className="skeleton-line w-full" />
+        <div className="skeleton-line w-1-2" />
+      </div>
+      {[1,2,3].map(i => (
+        <div className="skeleton-card" key={i}>
+          <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:10}}>
+            <div className="skeleton-line h-sm" style={{width:20}} />
+            <div className="skeleton-line h-sm" style={{width:180}} />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function EvidenceCard({ ev, index, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const score = ev.relevance_score || 0;
+  const pct   = Math.round(score * 100);
+  const fill  = ribbonColor(score);
+  const displayText = ev.text
+    ? ev.text.replace(/\n/g, ' ').replace(/\|/g, '·').slice(0, 420) + (ev.text.length > 420 ? '…' : '')
+    : '';
+
+  return (
+    <div className="evidence-card">
+      <div className="evidence-header" onClick={() => setOpen(o => !o)}>
+        <div className="evidence-left">
+          <span className="evidence-rank">[{index}]</span>
+          <div className="evidence-ribbon" style={{background: fill}} />
+          <span className="evidence-title">
+            {ev.ticker} · {ev.filed_date} — {(ev.section || '').slice(0, 52)}
+          </span>
+        </div>
+        <div className="evidence-right">
+          <div className="relevance-bar-wrap">
+            <div className="relevance-bar">
+              <div className="relevance-fill" style={{width: `${pct}%`, background: fill}} />
+            </div>
+            <span className="relevance-pct">{pct}%</span>
+          </div>
+          <span className={`chevron ${open ? 'open' : ''}`}>▼</span>
+        </div>
+      </div>
+      {open && (
+        <div className="evidence-body">
+          <div className="evidence-citation">{ev.citation}</div>
+          <div className="evidence-text">{displayText}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnswerPanel({ result }) {
+  const conf = confidenceConfig(result.confidence);
+  const hasSubs = result.sub_queries?.length > 1;
+
+  return (
+    <>
+      <div className="answer-card">
+        <div className="answer-header">
+          <div className={`confidence-pill ${conf.cls}`}>
+            <span className="confidence-dot" />
+            {conf.label}
+            <span style={{opacity:0.7}}>· {Math.round((result.confidence_score||0)*100)}%</span>
+          </div>
+          <div className="answer-meta-row">
+            {!result.judge_passed && (
+              <span className="judge-flag">⚠ Judge flagged</span>
+            )}
+            <span className="answer-meta">
+              {result.metadata?.total_elapsed_seconds || '—'}s
+            </span>
+            <span className="answer-meta">
+              {result.evidence?.length || 0} sources
+            </span>
+          </div>
+        </div>
+
+        <div className="answer-body">
+          {result.refused ? (
+            <p className="refused-text">
+              {result.refusal_reason || 'Insufficient evidence to answer reliably.'}
+            </p>
+          ) : (
+            <>
+              <div className="answer-text">
+                {(result.answer || '').split('\n').map((line, i) => (
+                  <React.Fragment key={i}>{line}{i < result.answer.split('\n').length - 1 && <br/>}</React.Fragment>
+                ))}
+              </div>
+              {!result.judge_passed && result.judge_feedback && (
+                <div className="judge-feedback-box">
+                  <strong>Judge feedback:</strong> {result.judge_feedback}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {hasSubs && (
+          <div className="sub-queries-row">
+            <span className="sq-label">Sub-queries</span>
+            {result.sub_queries.map((q, i) => (
+              <span className="sq-chip" key={i}>{q}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {result.evidence?.length > 0 && (
+        <div className="evidence-section">
+          <div className="section-heading">Supporting Evidence</div>
+          {result.evidence.map((ev, i) => (
+            <EvidenceCard key={i} ev={ev} index={i+1} defaultOpen={i===0} />
+          ))}
+        </div>
+      )}
+
+      <div className="meta-card">
+        <div className="section-heading" style={{marginBottom:10}}>Pipeline Metadata</div>
+        <div className="meta-grid">
+          <div className="meta-item">
+            <div className="meta-key">Model</div>
+            <div className="meta-val">{result.metadata?.model || '—'}</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-key">Elapsed</div>
+            <div className="meta-val">{result.metadata?.total_elapsed_seconds || '—'}s</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-key">Sub-queries</div>
+            <div className="meta-val">{result.metadata?.sub_query_count || 1}</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-key">Judge</div>
+            <div className="meta-val" style={{color: result.judge_passed ? '#10b981' : '#f59e0b'}}>
+              {result.judge_passed ? 'PASS ✓' : 'FLAGGED ⚠'}
+            </div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-key">Filters</div>
+            <div className="meta-val" style={{fontSize:10}}>
+              {JSON.stringify(result.metadata?.filters_used || {})}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Main App ─────────────────────────────────────────────────
+function App() {
+  const [query, setQuery]           = useState('');
+  const [ticker, setTicker]         = useState('');
+  const [year, setYear]             = useState('');
+  const [tool, setTool]             = useState('search_filings');
+  const [useReranker, setReranker]  = useState(true);
+  const [loading, setLoading]       = useState(false);
+  const [result, setResult]         = useState(null);
+  const [error, setError]           = useState(null);
+  const [apiOnline, setApiOnline]   = useState(false);
+  const [stats, setStats]           = useState(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const r = await fetch(`${API}/health`, {signal: AbortSignal.timeout(3000)});
+        setApiOnline(r.ok);
+        if (r.ok) fetchStats();
+      } catch { setApiOnline(false); }
+    };
+    check();
+    const t = setInterval(check, 15000);
+    return () => clearInterval(t);
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const r = await fetch(`${API}/stats`);
+      if (r.ok) {
+        const d = await r.json();
+        setStats(d.collection_stats);
+      }
+    } catch {}
+  };
+
+  const handleSubmit = async () => {
+    if (!query.trim() || loading) return;
+    setLoading(true);
+    setResult(null);
+    setError(null);
+
+    const payload = {
+      query: query.trim(),
+      tool,
+      use_reranker: useReranker,
+    };
+    if (ticker.trim()) payload.ticker = ticker.trim();
+    if (year && !isNaN(parseInt(year))) payload.year = parseInt(year);
+
+    try {
+      const r = await fetch(`${API}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
+      setResult(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
+  };
+
+  const setExample = (ex) => {
+    setQuery(ex);
+    textareaRef.current?.focus();
+  };
+
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <div className="brand-mark">Deal<span>Intelligence</span></div>
+          <div className="brand-sub">SEC FILING ANALYTICS · BANK GRADE</div>
+        </div>
+
+        <div className="sidebar-section">
+          <div className="sidebar-label">System Status</div>
+          <div className="status-row">
+            <StatusDot online={apiOnline} />
+            API {apiOnline ? 'Online' : 'Offline'}
+          </div>
+        </div>
+
+        <div className="sidebar-section">
+          <div className="sidebar-label">Query Parameters</div>
+          <div className="field">
+            <label>Ticker</label>
+            <input value={ticker} onChange={e => setTicker(e.target.value)} placeholder="AAPL · MSFT · AAPL,MSFT" />
+          </div>
+          <div className="field">
+            <label>Filing Year</label>
+            <input type="number" value={year} onChange={e => setYear(e.target.value)} placeholder="2024" min="2000" max="2030" />
+          </div>
+          <div className="field">
+            <label>Analysis Mode</label>
+            <select value={tool} onChange={e => setTool(e.target.value)}>
+              {TOOLS.map(t => (<option key={t.value} value={t.value}>{t.label}</option>))}
+            </select>
+          </div>
+          <div className="toggle-row">
+            <span>Cross-encoder reranker</span>
+            <Toggle checked={useReranker} onChange={setReranker} />
+          </div>
+        </div>
+
+        {stats && (
+          <div className="sidebar-section">
+            <div className="sidebar-label">Index Status</div>
+            <div className="stat-grid">
+              <div className="stat-card"><div className="stat-value">{(stats.total_chunks||0).toLocaleString()}</div><div className="stat-label">Chunks</div></div>
+              <div className="stat-card"><div className="stat-value">{stats.tickers?.length || 0}</div><div className="stat-label">Tickers</div></div>
+            </div>
+            <div style={{marginTop: 10}}><div className="sidebar-label">Coverage</div><div className="ticker-list">{stats.tickers?.map(t => <span className="ticker-badge" key={t}>{t}</span>)}</div><div className="ticker-list" style={{marginTop:6}}>{stats.years?.map(y => <span className="year-badge" key={y}>{y}</span>)}</div></div>
+          </div>
+        )}
+
+        <div className="pipeline-legend">
+          <div className="sidebar-label" style={{marginBottom:8}}>Pipeline</div>
+          {['Dense vector retrieval','BM25 sparse search','Reciprocal rank fusion','Cross-encoder reranking','LLM generation','Hallucination judge'].map(s => (<div className="pipeline-step" key={s}>{s}</div>))}
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="page-header">
+          <h1 className="page-title">Filing Intelligence</h1>
+          <p className="page-subtitle">Hybrid dense–sparse retrieval · cross-encoder reranking · hallucination detection · SEC 10-K/10-Q/8-K</p>
+        </div>
+
+        <div className="query-card">
+          <textarea ref={textareaRef} className="query-textarea" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown} placeholder="Ask anything about the indexed filings…&#10;e.g. What were Apple's iPhone revenue figures in fiscal 2024?" rows={3} />
+          <div className="query-footer"><span className="char-count">{query.length > 0 ? `${query.length} chars · ⌘↵ to submit` : '⌘↵ to submit'}</span><button className="btn-analyse" onClick={handleSubmit} disabled={loading || !query.trim() || !apiOnline}>{loading ? <><span className="spinner" /> Analysing</> : 'ANALYSE →'}</button></div>
+        </div>
+
+        <div className="examples-row">{EXAMPLES.map((ex, i) => (<button key={i} className="example-chip" onClick={() => setExample(ex)}>{ex.slice(0, 42)}{ex.length > 42 ? '…' : ''}</button>))}</div>
+
+        {error && <div className="error-box">✗ {error}</div>}
+        {loading && <SkeletonLoading />}
+        {!loading && result && <AnswerPanel result={result} />}
+        {!loading && !result && !error && (<div className="empty-state"><div className="empty-glyph">◈</div><div className="empty-title">Ready to analyse</div><div className="empty-sub">HYBRID RETRIEVAL · DENSE + BM25 + RRF<br/>CROSS-ENCODER RERANKING · LLM-AS-JUDGE<br/>COHERE EMBED-ENGLISH-V3.0</div></div>)}
+      </main>
+    </div>
+  );
+}
+
+document.addEventListener('DOMContentLoaded', () => { ReactDOM.createRoot(document.getElementById('root')).render(<App />); });
+if (document.readyState === 'complete' || document.readyState === 'interactive') { const root = document.getElementById('root'); if (root && !root._reactRootContainer && !root._reactRoot) { ReactDOM.createRoot(root).render(<App />); } }
+</script>
+</body>
+</html>

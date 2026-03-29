@@ -1,4 +1,4 @@
-﻿.env
+﻿*.env
 data/
 *.pyc
 __pycache__/
