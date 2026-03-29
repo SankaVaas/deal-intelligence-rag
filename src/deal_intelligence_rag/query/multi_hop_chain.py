@@ -53,7 +53,7 @@ load_dotenv()
 
 log = structlog.get_logger(__name__)
 
-LLM_MODEL = os.getenv("LLM_MODEL", "command-r")
+LLM_MODEL = os.getenv("LLM_MODEL", "command-r-08-2024")
 MAX_EVIDENCE_CHUNKS = 6    # max chunks passed to LLM context
 MAX_CONTEXT_CHARS = 6000   # total chars of evidence passed to LLM
 

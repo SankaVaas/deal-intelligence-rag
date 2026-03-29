@@ -71,29 +71,20 @@ async def health_check():
 
 
 @router.get("/stats")
-async def get_stats(request_state=None):
+async def get_stats():
     """Return statistics about the indexed collection."""
-    from deal_intelligence_rag.api.main import get_agent
+    from deal_intelligence_rag.api.state import get_agent
     agent = get_agent()
     stats = agent.chain.retriever.get_stats()
-    return {
-        "status": "ok",
-        "collection_stats": stats,
-    }
+    return {"status": "ok", "collection_stats": stats}
 
 
 @router.post("/query")
 async def query_endpoint(request: QueryRequest):
     """
     Main query endpoint. Runs the full RAG pipeline and returns a structured answer.
-
-    The response includes:
-      - answer: the generated text
-      - confidence: HIGH / MEDIUM / LOW / REFUSED
-      - evidence: list of supporting chunks with citations
-      - judge_passed: whether the answer passed hallucination check
     """
-    from deal_intelligence_rag.api.main import get_agent
+    from deal_intelligence_rag.api.state import get_agent
 
     log.info(
         "api_query",

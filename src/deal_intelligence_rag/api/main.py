@@ -27,62 +27,29 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from deal_intelligence_rag.api.middleware import LoggingMiddleware
 from deal_intelligence_rag.api.routes import router
+from deal_intelligence_rag.api.state import set_agent
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 log = structlog.get_logger(__name__)
 
-# ---------------------------------------------------------------------------
-# Agent singleton — initialised once at startup
-# ---------------------------------------------------------------------------
-
-_agent = None
-
-
-def get_agent():
-    """
-    Return the global agent instance.
-    
-    Raises:
-        RuntimeError: if agent not initialised (check startup logs and environment variables,
-                     especially COHERE_API_KEY)
-    """
-    if _agent is None:
-        error_msg = (
-            "Agent not initialised. Check server startup logs for errors. "
-            "Common causes: COHERE_API_KEY not set, vector store unavailable, or model download failed."
-        )
-        log.error("get_agent_failed", error=error_msg)
-        raise RuntimeError(error_msg)
-    return _agent
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    FastAPI lifespan context manager.
-    Initialises the agent at startup, cleans up at shutdown.
-    """
-    global _agent
-
+    """Initialise agent at startup, clean up at shutdown."""
     log.info("startup_initialising_agent")
+
     use_reranker = os.getenv("USE_RERANKER", "true").lower() == "true"
     use_judge = os.getenv("USE_JUDGE", "true").lower() == "true"
 
     try:
         from deal_intelligence_rag.agent.agent_loop import AgentLoop
-        _agent = AgentLoop(use_reranker=use_reranker, use_judge=use_judge)
+        agent = AgentLoop(use_reranker=use_reranker, use_judge=use_judge)
+        set_agent(agent)
         log.info("startup_complete", use_reranker=use_reranker, use_judge=use_judge)
     except Exception as e:
-        log.error(
-            "startup_failed",
-            error=str(e),
-            use_reranker=use_reranker,
-            use_judge=use_judge,
-        )
-        _agent = None
-        # Re-raise to prevent app from starting in broken state
+        log.error("startup_failed", error=str(e))
         raise
 
     yield

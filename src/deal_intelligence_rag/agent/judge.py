@@ -40,7 +40,7 @@ load_dotenv()
 
 log = structlog.get_logger(__name__)
 
-LLM_MODEL = os.getenv("LLM_MODEL", "command-r")
+LLM_MODEL = os.getenv("LLM_MODEL", "command-r-08-2024")
 MAX_JUDGE_CONTEXT_CHARS = 3000
 
 
